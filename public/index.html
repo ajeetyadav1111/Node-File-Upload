@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Image Upload</title>
+    <style>
+      :root {
+        --bg: #f4efe6;
+        --panel: #fffaf2;
+        --text: #1f2937;
+        --muted: #6b7280;
+        --accent: #c2410c;
+        --accent-dark: #9a3412;
+        --border: #e7d8c8;
+        --success: #166534;
+        --error: #b91c1c;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background:
+          radial-gradient(circle at top, #fde7c7 0%, transparent 35%),
+          linear-gradient(135deg, #f4efe6, #f8f5ef);
+        color: var(--text);
+      }
+
+      .card {
+        width: min(92vw, 460px);
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 32px 24px;
+        box-shadow: 0 18px 50px rgba(74, 37, 0, 0.12);
+      }
+
+      h1 {
+        margin: 0 0 10px;
+        font-size: 2rem;
+      }
+
+      p {
+        margin: 0 0 24px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      input[type="file"] {
+        width: 100%;
+        margin-bottom: 16px;
+        padding: 14px;
+        border: 1px dashed var(--border);
+        border-radius: 14px;
+        background: #fff;
+      }
+
+      button {
+        width: 100%;
+        border: 0;
+        border-radius: 14px;
+        padding: 14px 18px;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #fff;
+        cursor: pointer;
+        background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      }
+
+      button:disabled {
+        opacity: 0.7;
+        cursor: wait;
+      }
+
+      .status {
+        margin-top: 16px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        display: none;
+        font-size: 0.95rem;
+      }
+
+      .status.show {
+        display: block;
+      }
+
+      .status.success {
+        background: #ecfdf5;
+        color: var(--success);
+      }
+
+      .status.error {
+        background: #fef2f2;
+        color: var(--error);
+      }
+
+      .preview {
+        margin-top: 20px;
+        display: none;
+      }
+
+      .preview.show {
+        display: block;
+      }
+
+      .preview img {
+        width: 100%;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+      }
+
+      .preview a {
+        display: inline-block;
+        margin-top: 10px;
+        color: var(--accent-dark);
+        text-decoration: none;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <h1>Upload Image</h1>
+      <p>JPEG, JPG, PNG, ya WEBP image choose karo aur upload test karo.</p>
+
+      <form id="uploadForm">
+        <input type="file" name="image" id="image" accept="image/*" required />
+        <button type="submit" id="submitBtn">Upload</button>
+      </form>
+
+      <div id="status" class="status"></div>
+
+      <section id="preview" class="preview">
+        <img id="previewImage" alt="Uploaded preview" />
+        <a id="imageLink" href="#" target="_blank" rel="noreferrer">Open uploaded image</a>
+      </section>
+    </main>
+
+    <script>
+      const form = document.getElementById("uploadForm");
+      const button = document.getElementById("submitBtn");
+      const statusBox = document.getElementById("status");
+      const preview = document.getElementById("preview");
+      const previewImage = document.getElementById("previewImage");
+      const imageLink = document.getElementById("imageLink");
+
+      function showStatus(message, type) {
+        statusBox.textContent = message;
+        statusBox.className = `status show ${type}`;
+      }
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const formData = new FormData(form);
+
+        button.disabled = true;
+        button.textContent = "Uploading...";
+        preview.classList.remove("show");
+        showStatus("Uploading image...", "success");
+
+        try {
+          const response = await fetch("/api/upload", {
+            method: "POST",
+            body: formData,
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.message || "Upload failed");
+          }
+
+          showStatus("Image uploaded successfully.", "success");
+          previewImage.src = data.imageUrl;
+          imageLink.href = data.imageUrl;
+          preview.classList.add("show");
+          form.reset();
+        } catch (error) {
+          showStatus(error.message || "Something went wrong", "error");
+        } finally {
+          button.disabled = false;
+          button.textContent = "Upload";
+        }
+      });
+    </script>
+  </body>
+</html>
